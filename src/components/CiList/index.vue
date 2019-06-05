@@ -3,33 +3,25 @@
         <Loading v-if="isLoading" />
         <Scroller v-else>
         <ul>
-            <!-- <li>
+            <li v-for='(item,index) in cinemas' :key='item.id'>
                 <div>
-                    <span>大地影院(澳东世纪店)</span>
-                    <span class="q"><span class="price">22.9</span> 元起</span>
+                    <div class="head">
+                        <h2>{{item.nm}}</h2>
+                        <p><span class="price">{{item.sellPrice}}</span>元起</p>                       
+                    </div>
+                    <p>{{item.addr}}</p>
+                    <p class="sign">                        
+                        <span :class="isColor(obj[current])" v-for='(current,key) in signList[index]' :key='key'>{{obj[current]}}</span>
+                        <!-- <span class="green">退</span>
+                        <span class="yellow">折扣卡</span>
+                        <span class="yellow">小吃</span> -->
+                    </p>
                 </div>
-                <div class="address">
-                    <span>金州区大连经济技术开发区澳东世纪3层</span>
-                    <span>1763.5km</span>
-                </div>
-                <div class="card">
-                    <div>小吃</div>
-                    <div>折扣卡</div>
-                </div>
-            </li> -->
-            <li v-for="item in cinemaList" :key="item.id">
                 <div>
-                    <span>{{ item.nm }}</span>
-                    <span class="q"><span class="price">{{ item.sellPrice }}</span> 元起</span>
-                </div>
-                <div class="address">
-                    <span>{{ item.addr }}</span>
-                    <span>{{ item.distance }}</span>
-                </div>
-                <div class="card">
-                    <div v-for="(num,key) in item.tag"  :key="key" :class=" key | classCard ">{{ key | formatCard }}</div>
+                    {{item.distance}}
                 </div>
             </li>
+            
         </ul>
         </Scroller>
     </div>
@@ -42,23 +34,44 @@ export default {
         return {
             cinemaList : [],
             isLoading : true,
-            prevCityId : -1
+            prevCityId : -1,
+            cinemas:[],
+            signList:[],
+            obj:{
+                allowRefund:'改签',
+                endorse:'退',
+                sell:'折扣卡',
+                snack:'小吃'
+            },
         };
     },
     activated(){
-
-        var cityId = this.$store.state.city.id;
-        if( this.prevCityId === cityId ){ return; }
-        this.isLoading = true;
-
-        this.axios.get('/api/cinemaList?cityId='+cityId).then((res)=>{
-            var msg = res.data.msg;
-            if(msg === 'ok'){
-                this.cinemaList = res.data.data.cinemas;
-                this.isLoading = false;
-                this.prevCityId = cityId
+        this.axios.get('/api/cinemaList?cityId=10').then(res=>{
+          let msg=res.data.msg;
+          let cinemas=res.data.data.cinemas   
+          cinemas.forEach(item=>{
+              let obj=[]
+              for(let i in item.tag){
+                  if(item.tag[i]=='1'){
+                      obj.push(i)
+                  }
+              }
+              this.signList.push(obj)
+          })     
+          if(msg==='ok'){
+              this.cinemas=cinemas ,
+              this.isLoading=false             
+          }
+      })
+    },
+    methods: {
+        isColor(msg){
+            if(msg==='改签'||msg==='退'){
+                return 'green'
+            }else{
+                return 'yellow'
             }
-        });
+        }
     },
     filters : {
         formatCard(key){
@@ -93,17 +106,52 @@ export default {
 }
 </script>
 
-<style scoped>
-#content .cinema_body{ flex:1; overflow:auto;}
-.cinema_body ul{ padding:20px;}
-.cinema_body li{  border-bottom:1px solid #e6e6e6; margin-bottom: 20px;}
-.cinema_body div{ margin-bottom: 10px;}
-.cinema_body .q{ font-size: 11px; color:#f03d37;}
-.cinema_body .price{ font-size: 18px;}
-.cinema_body .address{ font-size: 13px; color:#666;}
-.cinema_body .address span:nth-of-type(2){ float:right; }
-.cinema_body .card{ display: flex;}
-.cinema_body .card div{ padding: 0 3px; height: 15px; line-height: 15px; border-radius: 2px; color: #f90; border: 1px solid #f90; font-size: 13px; margin-right: 5px;}
-.cinema_body .card div.or{ color: #f90; border: 1px solid #f90;}
-.cinema_body .card div.bl{ color: #589daf; border: 1px solid #589daf;}
+<style lang='less' scoped>
+    ul{
+        padding: 0 1.2rem;
+        li{
+            padding: .8rem 0 .4rem;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #e6e6e6; 
+            font-size: .8rem;
+            .head{
+                display: flex;
+                h2{
+                    font-size: .8rem;
+                }
+                .price{
+                    font-size: .8rem;
+                    font-weight: 700;
+                    margin: 0 .2rem;
+                }
+                p{
+                    color: #f03d37
+                    
+                }
+            }   
+            &>div:first-child{
+                line-height: 2rem;
+                flex:1;
+                .sign>span{
+                    display: inline-block;
+                    line-height: 1rem;
+                    padding: .2rem;
+                    vertical-align: middle;
+                    margin-right: .5rem;
+                }
+                .green{                    
+                    color: #589daf;
+                    border: 1px solid #589daf;
+                }
+                .yellow{                    
+                    color: #f90;
+                    border: 1px solid #f90;
+                }
+            }      
+            &>div:last-child{
+                align-self: center;
+            }
+        }
+    }
 </style>
